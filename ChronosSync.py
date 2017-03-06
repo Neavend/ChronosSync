@@ -6,7 +6,7 @@
 #========================================================================
 import sys
 import json
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import xml.etree.ElementTree as ET
 
 import httplib2
@@ -14,7 +14,7 @@ from apiclient.discovery import build
 from oauth2client.file import Storage
 from oauth2client.client import AccessTokenRefreshError
 from oauth2client.client import OAuth2WebServerFlow
-from oauth2client.tools import run
+from oauth2client.tools import run_flow as run
 
 #==============================================
 # Get the starting time (Google Calendar form)
@@ -60,20 +60,15 @@ def getEnd(rawDate, rawHour, rawDuration):
   return final
 
 
-
-
-
-
-
 #===============================================================================
 # MAIN
 #===============================================================================
 def main():
-  print '-- ChronosSync starting'
+  print('-- ChronosSync starting')
   #==============================
   # Read JSON configuration file
   #==============================
-  print 'Reading configuration file...'
+  print('Reading configuration file...')
   with open('csi.json') as f:
     conf = json.load(f)
 
@@ -90,8 +85,8 @@ def main():
   #=========================
   # Getting the Chronos XML
   #=========================
-  print 'Recovering Chronos timetables...'
-  chronosXML = urllib.urlopen('http://webservices.chronos.epita.net/GetWeeks.aspx?'
+  print('Recovering Chronos timetables...')
+  chronosXML = urllib.request.urlopen('http://webservices.chronos.epita.net/GetWeeks.aspx?'
                               + 'auth=' + auth + '&num=' + num
                               + '&week=' + week + '&group=' + group)
   tree = ET.parse(chronosXML)
@@ -100,7 +95,7 @@ def main():
   #=======================================
   # Getting and formating all the courses
   #=======================================
-  print 'Formating courses...'
+  print('Formating courses...')
   courses = []
   for day in root.iter('day'):
     rawDate = day.find('date').text
@@ -126,7 +121,7 @@ def main():
   #===================================
   # Connecting to Google Calendar API
   #===================================
-  print 'Connection to Google Calendar...'
+  print('Connection to Google Calendar...')
   flow = OAuth2WebServerFlow(cid, cs, scope)
   storage = Storage('credentials.dat')
   credentials = storage.get()
@@ -140,7 +135,7 @@ def main():
     #============================================
     # Cleaning old events from the Google Agenda
     #============================================
-    print 'Cleaning Google Agenda...'
+    print('Cleaning Google Agenda...')
     page_token = None
     while True:
       events = service.events().list(calendarId=calid, pageToken=page_token).execute()
@@ -154,7 +149,7 @@ def main():
     #===========================
     # Uploding on Google Agenda
     #===========================
-    print 'Uploading courses on Google Calendar...'
+    print('Uploading courses on Google Calendar...')
     for c in courses:
       event = {
         'start': {
@@ -169,9 +164,9 @@ def main():
       }
       created_event = service.events().insert(calendarId=calid, body=event).execute()
 
-    print '-- Goodbye'
+    print('-- Goodbye')
   except AccessTokenRefreshError:
-    print ('Credentials have been revoked')
+    print('Credentials have been revoked')
 
 if __name__ == '__main__':
   main()
